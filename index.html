@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prep Tracker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+
+:root{
+  --bg:#f4f1ea; --surface:#ffffff; --surface-alt:#ece7db;
+  --ink:#1d211d; --muted:#6b6e63;
+  --accent:#a8631a; --accent-ink:#ffffff; --accent-soft:#f2e2cd;
+  --good:#2f5d3a; --good-soft:#dfe9df;
+  --danger:#9c3b30; --danger-soft:#f3e0dc;
+  --border:#ddd6c6; --track:#e4ded0;
+  font-synthesis:none;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1310; --surface:#161d18; --surface-alt:#1c241d;
+    --ink:#e9ece6; --muted:#93998c;
+    --accent:#e3a341; --accent-ink:#1a1204; --accent-soft:#3a2c12;
+    --good:#6fbf83; --good-soft:#1c2a1f;
+    --danger:#e2776a; --danger-soft:#33201c;
+    --border:#2a332b; --track:#232c24;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1310; --surface:#161d18; --surface-alt:#1c241d;
+  --ink:#e9ece6; --muted:#93998c;
+  --accent:#e3a341; --accent-ink:#1a1204; --accent-soft:#3a2c12;
+  --good:#6fbf83; --good-soft:#1c2a1f;
+  --danger:#e2776a; --danger-soft:#33201c;
+  --border:#2a332b; --track:#232c24;
+}
+*{box-sizing:border-box;}
+body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',system-ui,sans-serif;line-height:1.5;padding:0 0 4rem;}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;}
+.wrap{max-width:900px;margin:0 auto;padding:1.5rem 1.1rem;}
+header.top{padding:1.75rem 1.1rem 1rem;text-align:center;}
+header.top .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;}
+header.top h1{font-size:clamp(1.5rem,4vw,2rem);margin:.35rem 0 .25rem;text-wrap:balance;font-weight:700;}
+header.top p.sub{color:var(--muted);font-size:.88rem;max-width:38rem;margin:0 auto;}
+
+nav.tabs{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--border);display:flex;gap:.4rem;padding:.7rem 1.1rem;max-width:900px;margin:0 auto;}
+nav.tabs button{font-family:'IBM Plex Mono',monospace;font-size:.78rem;font-weight:600;background:var(--surface);color:var(--muted);border:1px solid var(--border);padding:.5rem 1rem;border-radius:999px;cursor:pointer;transition:.15s;}
+nav.tabs button.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+nav.tabs button:hover:not(.active){border-color:var(--accent);color:var(--ink);}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.4rem 1.4rem 1.3rem;margin-bottom:1.2rem;}
+.card h2{margin:0 0 .3rem;font-size:1.05rem;}
+.card > p.sub{color:var(--muted);font-size:.84rem;margin:0 0 1rem;}
+
+.selects{display:flex;gap:.7rem;flex-wrap:wrap;margin-bottom:1rem;}
+.selects select{font-family:'IBM Plex Sans',sans-serif;font-size:.88rem;padding:.55rem .8rem;border-radius:9px;border:1px solid var(--border);background:var(--surface-alt);color:var(--ink);flex:1 1 200px;}
+
+.daymeta{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:.5rem;margin-bottom:.9rem;padding-bottom:.8rem;border-bottom:1px dashed var(--border);}
+.daymeta .dname{font-size:1.15rem;font-weight:700;}
+.daymeta .dphase{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;}
+.daymeta .drhythm{font-size:.76rem;color:var(--muted);}
+
+.deadline-banner{background:var(--danger-soft);border:1px solid var(--danger);border-radius:10px;padding:.6rem .9rem;font-size:.82rem;color:var(--danger);margin-bottom:.9rem;font-weight:600;}
+
+.examday{background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;padding:1rem 1.1rem;}
+.examday h3{margin:0 0 .4rem;color:var(--accent);font-size:1rem;}
+.examday ul{margin:.5rem 0 0;padding-left:1.2rem;font-size:.88rem;}
+.examday li{margin-bottom:.3rem;}
+
+.block{display:flex;gap:.8rem;align-items:flex-start;padding:.65rem .5rem;border-radius:9px;transition:background .12s;cursor:pointer;}
+.block:hover{background:var(--surface-alt);}
+.block input{appearance:none;-webkit-appearance:none;width:1.2rem;height:1.2rem;flex:0 0 auto;border:1.5px solid var(--border);border-radius:5px;margin-top:.15rem;position:relative;cursor:pointer;background:var(--surface);}
+.block input:checked{background:var(--good);border-color:var(--good);}
+.block input:checked::after{content:"";position:absolute;left:4px;top:0px;width:4px;height:9px;border:solid var(--surface);border-width:0 2px 2px 0;transform:rotate(45deg);}
+.block .btime{font-family:'IBM Plex Mono',monospace;font-size:.74rem;color:var(--muted);flex:0 0 108px;padding-top:.1rem;}
+.block .bcat{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:.05rem .4rem;margin-right:.4rem;vertical-align:middle;}
+.block .blabel{font-size:.9rem;}
+.block.done .blabel{color:var(--muted);text-decoration:line-through;}
+.block.fixed{opacity:.55;cursor:default;}
+.block.fixed:hover{background:none;}
+.block.fixed input{visibility:hidden;}
+
+.daysummary{margin-top:1rem;padding-top:.9rem;border-top:1px dashed var(--border);display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;}
+.daysummary .pct{font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--accent);font-size:1.1rem;}
+.daysummary .bar-track{flex:1 1 140px;height:8px;background:var(--track);border-radius:999px;overflow:hidden;min-width:100px;}
+.daysummary .bar-fill{height:100%;background:var(--good);border-radius:999px;}
+.daysummary .txt{font-size:.78rem;color:var(--muted);}
+.daysummary .skipped{width:100%;font-size:.8rem;color:var(--danger);margin-top:.3rem;}
+
+table.ref{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:.3rem;}
+table.ref th{text-align:left;font-family:'IBM Plex Mono',monospace;font-size:.66rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;padding:.4rem .5rem;border-bottom:2px solid var(--accent);}
+table.ref td{padding:.55rem .5rem;border-bottom:1px solid var(--border);vertical-align:top;}
+table.ref td.num{font-family:'IBM Plex Mono',monospace;color:var(--accent);font-weight:700;white-space:nowrap;}
+.tablewrap{overflow-x:auto;}
+
+.syllabus-exam{margin-bottom:1.1rem;}
+.syllabus-exam h3{font-size:.92rem;margin:0 0 .35rem;font-family:'IBM Plex Mono',monospace;color:var(--accent);}
+.syllabus-exam p{font-size:.86rem;margin:0;color:var(--ink);}
+
+.linklist{display:flex;flex-direction:column;gap:.5rem;}
+.linklist .litem{font-size:.86rem;padding:.5rem .6rem;background:var(--surface-alt);border-radius:8px;}
+.linklist .litem b{color:var(--ink);}
+.linklist a{color:var(--accent);}
+
+.histrow{display:flex;justify-content:space-between;align-items:center;padding:.4rem .3rem;border-bottom:1px solid var(--border);font-size:.82rem;}
+.histrow:last-child{border-bottom:none;}
+.histrow .hbar{flex:1;height:6px;background:var(--track);border-radius:999px;margin:0 .8rem;overflow:hidden;}
+.histrow .hbar i{display:block;height:100%;background:var(--good);}
+
+footer.note{max-width:900px;margin:1.5rem auto 0;padding:0 1.1rem;color:var(--muted);font-size:.76rem;line-height:1.7;}
+[hidden]{display:none!important;}
+@media(max-width:600px){.wrap{padding:1.1rem .8rem;} .block .btime{flex-basis:80px;font-size:.68rem;}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="eyebrow">Hour by hour, week by week</div>
+  <h1>Prep Tracker</h1>
+  <p class="sub">RRB PO &middot; UPSC EPFO &middot; IB ACIO &middot; UPSC CSE. Pick a week, pick a day, work the blocks, watch them strike off.</p>
+</header>
+
+<nav class="tabs">
+  <button class="active" data-tab="tracker">Tracker</button>
+  <button data-tab="reference">Syllabus, Dates &amp; Resources</button>
+</nav>
+
+<div class="wrap">
+
+  <section id="tab-tracker">
+    <div class="card">
+      <h2>Today's blocks</h2>
+      <p class="sub">Check a block off the moment it's done — it strikes through and saves. Come back to any past day to see exactly how it went.</p>
+      <div class="selects">
+        <select id="weekSel"></select>
+        <select id="daySel"></select>
+      </div>
+      <div class="selects" style="margin-bottom:.3rem;">
+        <select id="forkSel" style="flex:1 1 100%;">
+          <option value="unknown">November Fork: not decided yet (lighter pace applies)</option>
+          <option value="employed">November Fork: UK job secured — stay on lighter pace</option>
+          <option value="moved">November Fork: moved to India — full-time pace from 1 Nov</option>
+        </select>
+      </div>
+      <p style="font-size:.74rem;color:var(--muted);margin:0 0 1rem;">This only changes how Phase 2 onward is generated on this device — it doesn't rewrite past days.</p>
+      <div id="dayView"></div>
+    </div>
+
+    <div class="card">
+      <h2>History</h2>
+      <p class="sub">Every day you've logged progress on, most recent first.</p>
+      <div id="historyList" style="font-size:.85rem;color:var(--muted);">No days tracked yet — check off your first block above.</div>
+    </div>
+  </section>
+
+  <section id="tab-reference" hidden>
+    <div class="card">
+      <h2>Exam dates &amp; time remaining</h2>
+      <p class="sub">Countdowns update live from today's date. "(est.)" dates aren't officially confirmed yet.</p>
+      <div class="tablewrap"><table class="ref" id="datesTable"></table></div>
+    </div>
+
+    <div class="card">
+      <h2>Syllabus, condensed</h2>
+      <p class="sub">The exact shape of what each exam actually tests.</p>
+      <div id="syllabusList"></div>
+    </div>
+
+    <div class="card">
+      <h2>Learning materials</h2>
+      <p class="sub">Official sources are linked directly. Everything else is named, not linked — verify the exact site/edition yourself before trusting it as current.</p>
+      <div class="linklist">
+        <div class="litem"><b>UPSC — official.</b> Syllabus, notifications, calendar, results. <a href="https://upsc.gov.in" target="_blank" rel="noopener">upsc.gov.in</a></div>
+        <div class="litem"><b>IBPS — official.</b> RRB PO notification, admit cards, results. <a href="https://ibps.in" target="_blank" rel="noopener">ibps.in</a></div>
+        <div class="litem"><b>EPFO — official.</b> APFC notification and updates. <a href="https://epfo.gov.in" target="_blank" rel="noopener">epfo.gov.in</a></div>
+        <div class="litem"><b>PIB — official.</b> Government press releases, the base layer for current affairs. <a href="https://pib.gov.in" target="_blank" rel="noopener">pib.gov.in</a></div>
+        <div class="litem"><b>PRS Legislative Research.</b> Plain-language bill and policy summaries — useful for both EPFO's Labour Codes and CSE's GS II/III. <a href="https://prsindia.org" target="_blank" rel="noopener">prsindia.org</a></div>
+        <div class="litem"><b>IB ACIO recruitment.</b> Notified via MHA / the IB's own recruitment cell, not a fixed URL — search "IB ACIO Grade II recruitment" fresh each cycle rather than bookmarking a page.</div>
+        <div class="litem"><b>NIACL recruitment.</b> Search "National Insurance Company AO recruitment" each cycle for the current year's official portal.</div>
+        <div class="litem"><b>Daily newspaper.</b> The Hindu or Indian Express, read daily — this is what your 20&ndash;30 min current-affairs habit should actually consist of, not an aggregator's summary of it.</div>
+        <div class="litem"><b>Standard reference books (verify latest edition yourself):</b> M. Laxmikanth &mdash; <i>Indian Polity</i> (EPFO Governance week + CSE GS II); Ramesh Singh &mdash; <i>Indian Economy</i> (EPFO Economy week + CSE GS III); NCERT XI&ndash;XII History, Geography, Economics &mdash; foundational for both EPFO and CSE static GS; a current UPSC Psychology optional guide, used alongside your own MSc materials for Optional Paper 1.</div>
+        <div class="litem"><b>Mock-test platforms (pick one, stay on it):</b> Testbook, Adda247, Oliveboard or Gradeup/Unacademy all cover RRB/EPFO-pattern mocks. For CSE Prelims/Mains test series, most major UPSC coaching platforms (ForumIAS, Vision IAS, InsightsIAS) run one — compare current pricing before committing.</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="note">
+  <p><b>How saving works:</b> checking a block off saves to this browser's local storage on this device. It does not sync across devices or browsers — a phone and a laptop each keep their own separate progress. Don't clear this browser's site data/history for this page, or your progress goes with it. There's no cloud backup, so if that matters to you, export/back up the page's localStorage periodically or keep using the hosted claude.ai version alongside this one.</p>
+  <p><b>On the numbers here:</b> Week 1 (6&ndash;12 Sep) is hand-built to match exactly what was planned. Every week after that is generated from the same phase-by-phase hours and topic list already agreed in the Mission Timetable — real content, rotated automatically rather than re-typed by hand for 50 weeks. If a specific week's content looks off once you're closer to it, say so and it can be corrected.</p>
+</footer>
+
+<script>
+(function(){
+"use strict";
+var DAY_MS = 86400000;
+function pad(n){return n<10?'0'+n:''+n;}
+function toDateStr(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function fromDateStr(s){var p=s.split('-');return new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]));}
+function addDays(s,n){var d=fromDateStr(s);d.setDate(d.getDate()+n);return toDateStr(d);}
+function weekdayName(s){return fromDateStr(s).toLocaleDateString('en-GB',{weekday:'short'});}
+function fullDateLabel(s){return fromDateStr(s).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+function isSunday(s){return fromDateStr(s).getDay()===0;}
+function isSaturday(s){return fromDateStr(s).getDay()===6;}
+function daysBetween(a,b){return Math.round((fromDateStr(b)-fromDateStr(a))/DAY_MS);}
+function today(){return toDateStr(new Date());}
+
+var PROGRAM_START = '2026-09-06'; // Week 1, Day 1 (Sunday)
+var PROGRAM_END   = '2027-08-20'; // CSE Mains
+var TOTAL_WEEKS = Math.ceil(daysBetween(PROGRAM_START,PROGRAM_END)/7)+1;
+
+var PHASES = [
+  {id:'p0',label:'Phase 0 — Launch',start:'2026-09-05',end:'2026-09-05'},
+  {id:'p1',label:'Phase 1 — Foundation',start:'2026-09-06',end:'2026-10-25'},
+  {id:'p2',label:'Phase 2 — RRB Prelims Sprint',start:'2026-10-26',end:'2026-11-22'},
+  {id:'p3',label:'Phase 3 — RRB Mains + EPFO Final Sprint',start:'2026-11-23',end:'2026-12-27'},
+  {id:'p4',label:'Phase 4 — Recovery + IB ACIO',start:'2026-12-28',end:'2027-02-14'},
+  {id:'p5',label:'Phase 5 — Interviews + CSE Prelims Sprint',start:'2027-02-15',end:'2027-05-31'},
+  {id:'p6',label:'Phase 6 — CSE Mains Push',start:'2027-06-01',end:'2027-08-20'}
+];
+function phaseFor(dateStr){
+  for(var i=0;i<PHASES.length;i++){ if(dateStr>=PHASES[i].start && dateStr<=PHASES[i].end) return PHASES[i]; }
+  return dateStr < PHASES[0].start ? PHASES[0] : PHASES[PHASES.length-1];
+}
+
+var NOV_FORK_DATE = '2026-11-01';
+
+var DEADLINES = {
+  '2026-09-11':'EPFO APFC application closes today.',
+  '2026-09-21':'RRB PO application closes today.',
+  '2027-02-02':'UPSC CSE 2027 application closes (est.) today.'
+};
+var EXAM_DAYS = {
+  '2026-11-21':{label:'RRB PO Prelims (est.)',tips:['Light revision only this morning — no new content.','Travel/centre logistics confirmed the night before.','Sleep matters more today than one more mock.']},
+  '2026-11-22':{label:'RRB PO Prelims — contingency day (est.)',tips:['Same as above if your slot falls today instead.']},
+  '2026-12-20':{label:'UPSC EPFO APFC written exam (confirmed)',tips:['300 marks, 120 Qs, 2 hrs, 1/3 negative marking — pace yourself, don’t guess blindly.','No CSE or RRB today. One exam, full focus.']},
+  '2026-12-27':{label:'RRB PO Mains (est.)',tips:['This is the hard pivot the plan flagged weeks ago — EPFO is behind you now.','Computer Knowledge and Financial Awareness are pure recall — don’t second-guess them.']},
+  '2027-05-23':{label:'UPSC CSE Prelims (est.)',tips:['CSAT is qualifying only — don’t over-invest time there at the cost of GS.','This is the payoff of the whole Nov–May stretch. Trust the prep, don’t cram new material today.']},
+  '2027-08-20':{label:'UPSC CSE Mains (est.)',tips:['Multi-day exam — pace your energy across papers, not just today.','Essay and Optional Paper 1 are your strongest ground — don’t let nerves undersell them.']}
+};
+
+// ---- Category labels ----
+var CAT = {RRB:'RRB',EPFO:'EPFO',CSE1:'CSE Opt.1',CSE2:'CSE Opt.2',CSEGS:'CSE GS',CA:'Current aff.',MISC:'Revision',IBACIO:'IB ACIO',CSAT:'CSAT',ESSAY:'Essay',ETHICS:'Ethics'};
+
+// ---- Rotating content pools (grounded in the Mission Timetable's own checklists) ----
+var POOL_EPFO_WEEK = {
+  2:['Preamble & basic structure of the Constitution','Fundamental Rights & Duties','Directive Principles & Parliament','Judiciary & Centre-State relations','Recent constitutional amendments','Week revision pass','Topic-wise MCQ test — Governance & Constitution'],
+  3:['GDP, National Income & growth concepts','Inflation & monetary policy (RBI)','Fiscal policy, taxation & Union Budget basics','Banking & financial sector structure','Govt schemes & Economic Survey highlights','Week revision pass','Topic-wise MCQ test — Indian Economy'],
+  4:['Code on Wages, 2019','Industrial Relations Code, 2020','Social Security Code, 2020','Occupational Safety, Health & Working Conditions Code','Trade unions & dispute resolution mechanisms','Week revision pass','Topic-wise MCQ test — Labour Codes'],
+  5:['Journal, ledger & trial balance','Depreciation & final accounts','Types of audit & auditing standards','Insurance principles & IRDAI basics','Practice numericals across all four','Week revision pass','Topic-wise MCQ test — Accountancy/Auditing/Insurance']
+};
+var POOL_EPFO_CONSOLIDATE = ['Full-syllabus EPFO mock + review','Weakest-topic drilling from mock analysis','Cross-topic revision — Culture & Freedom Movement','Cross-topic revision — Governance & Economy','Cross-topic revision — Labour & Accountancy','Timed 300-mark mock, full length','Error-log review & final gap list'];
+var POOL_RRB = ['Coding-decoding practice','Syllogisms & inequalities','Blood relations & direction sense','Quant: number series & simplification','Quant: percentages, ratio & averages','Quant: data interpretation','Quant: time & work, SI/CI','Input-output reasoning','Puzzles: circular seating, advanced','Puzzles: scheduling-based','Quant: mixed drill, timed 20 Qs','Reasoning: mixed drill, timed 20 Qs','Full Prelims-pattern mini-mock','Mock review — error pattern log'];
+var POOL_CSE2 = ['Rehabilitation Psychology','Disadvantaged Groups','Social Integration (caste, class, religion)','IT & Mass Media','Psychology & Economic Development','Environment & related fields','Other applications (military, sports, terrorism)','Psychology of Gender','Psychological Measurement','Psychological Well-being & Mental Disorders','Therapeutic Approaches'];
+var POOL_CSE1 = ['Introduction to Psychology','Methods of Psychology','Research Methods & statistics','Development of Human Behaviour','Sensation, Attention & Perception','Learning','Memory','Thinking & Problem Solving','Motivation & Emotion','Intelligence & Aptitude','Personality','Attitudes, Values & Interests','Language & Communication','Issues in Modern Psychology (AI, consciousness)'];
+var POOL_GS = ['GS I: History & Culture (post-independence)','GS I: Geography — physical & Indian','GS II: Polity & Governance, advanced','GS II: International Relations','GS III: Economy, advanced topics','GS III: Science & Technology','GS III: Environment & Ecology','GS III: Security & Disaster Management','GS IV foundations: Ethics basics'];
+var POOL_CSAT = ['Comprehension passages, timed','Logical reasoning','Quant aptitude','Decision making & interpersonal skills'];
+var POOL_IBACIO = ['Tier 1 mixed mock — reasoning/quant/GA/English','Current affairs revision, IB ACIO pattern','Short-essay / descriptive English practice'];
+var POOL_GSMAINS = ['GS I answer writing, timed','GS II answer writing, timed','GS III answer writing, timed','GS IV (Ethics) case-study answers'];
+var POOL_OPTWRITE = ['Optional Paper 1: full-length timed answer','Optional Paper 2: full-length timed answer, India-context focus'];
+
+function pick(pool, idx){ return pool[((idx % pool.length)+pool.length)%pool.length]; }
+
+// ---- Hardcoded Week 1 (6-12 Sep) — exactly as planned, plus Phase 0 (5 Sep) ----
+var HARD = {};
+HARD['2026-09-05'] = {rhythm:'Phase 0 — admin day', blocks:[
+  {t:'Today',cat:'MISC',l:'Both applications submitted and fee paid (EPFO + RRB)'},
+  {t:'Today',cat:'MISC',l:'Diagnostic mock taken, scored, weak topics listed by name'},
+  {t:'Today',cat:'MISC',l:'CSE Psychology optional syllabus mapped against your MSc + thesis'},
+  {t:'Today',cat:'MISC',l:'EPFO’s 9 subject areas bookmarked; Reasoning/Quant mock platform chosen'},
+  {t:'Tonight',cat:'CA',l:'Current-affairs habit started — 20 min, one source'}
+]};
+HARD['2026-09-06'] = {rhythm:'B', blocks:[
+  {t:'12:30–14:00',cat:'CSE2',l:'CSE Optional 2: Work Psychology — first unit started'},
+  {t:'14:00–16:00',cat:'EPFO',l:'EPFO: Indian Art & Architecture — first-pass notes'},
+  {t:'16:15–17:15',cat:'RRB',l:'RRB: seating arrangement (linear), 30 Qs'},
+  {t:'17:15–17:45',cat:'CA',l:'Current affairs: Day 1 notes started'},
+  {t:'18:30–20:00',cat:'CSE1',l:'CSE Optional 1: 2 timed UPSC-format answers written'},
+  {t:'20:30–22:00',cat:'CSAT',l:'CSAT: full diagnostic mock, scored separately from RRB reasoning'}
+]};
+HARD['2026-09-07'] = {rhythm:'A', blocks:[
+  {t:'06:00–07:00',cat:'RRB',l:'RRB: seating arrangement (circular), 30 Qs'},
+  {t:'07:30–08:30',cat:'EPFO',l:'EPFO: Literature, Religion & Philosophy — reading (Vedic lit, Buddhism, Jainism, Bhakti/Sufi)'},
+  {t:'15:00–16:30',cat:'CSE1',l:'CSE Optional 1: flashcards/vocab review (commute)'},
+  {t:'17:00–19:00',cat:'EPFO',l:'EPFO: Literature, Religion & Philosophy — notes finished'},
+  {t:'19:30–21:00',cat:'CSE2',l:'CSE Optional 2: Work Psychology finished, 10 MCQs self-tested'},
+  {t:'21:00–21:45',cat:'CSE1',l:'CSE Optional 1: 1 timed answer'}
+]};
+HARD['2026-09-08'] = {rhythm:'A', blocks:[
+  {t:'06:00–07:00',cat:'RRB',l:'RRB: puzzles (box/floor-based), 25 Qs'},
+  {t:'07:30–08:30',cat:'EPFO',l:'EPFO: Freedom Movement — early phase (1857, INC formation) — reading'},
+  {t:'15:00–16:30',cat:'CA',l:'Current affairs + vocab, Day 3 (commute)'},
+  {t:'17:00–19:00',cat:'EPFO',l:'EPFO: Freedom Movement — Moderates vs Extremists, Swadeshi — notes done'},
+  {t:'19:30–21:00',cat:'CSE2',l:'CSE Optional 2: Educational Psychology — started'},
+  {t:'21:00–21:45',cat:'CSE1',l:'CSE Optional 1: 1 timed answer'}
+]};
+HARD['2026-09-09'] = {rhythm:'A', blocks:[
+  {t:'06:00–07:00',cat:'RRB',l:'RRB: multi-part reasoning — derive every valid conclusion, not just the first'},
+  {t:'07:30–08:30',cat:'EPFO',l:'EPFO: Freedom Movement — Gandhian era — reading (Non-cooperation, Civil Disobedience)'},
+  {t:'15:00–16:30',cat:'CA',l:'Current affairs + vocab, Day 4 (commute)'},
+  {t:'17:00–19:00',cat:'EPFO',l:'EPFO: Freedom Movement — Quit India, key leaders — notes done'},
+  {t:'19:30–21:00',cat:'CSE2',l:'CSE Optional 2: Educational Psychology — finished'},
+  {t:'21:00–21:45',cat:'CSE1',l:'CSE Optional 1: 1 timed answer'}
+]};
+HARD['2026-09-10'] = {rhythm:'A', blocks:[
+  {t:'06:00–07:00',cat:'RRB',l:'RRB: blood relations + direction sense, 25 Qs'},
+  {t:'07:30–08:30',cat:'EPFO',l:'EPFO: Freedom Movement — culmination — reading (INA, Cabinet Mission)'},
+  {t:'15:00–16:30',cat:'CA',l:'Current affairs + vocab, Day 5 (commute)'},
+  {t:'17:00–19:00',cat:'EPFO',l:'EPFO: Partition, Independence, integration of princely states — notes done'},
+  {t:'19:30–21:00',cat:'CSE2',l:'CSE Optional 2: Community Psychology — started'},
+  {t:'21:00–21:45',cat:'CSE1',l:'CSE Optional 1: 1 timed answer'}
+]};
+HARD['2026-09-11'] = {rhythm:'A', blocks:[
+  {t:'06:00–07:00',cat:'RRB',l:'RRB: quant light-touch — number series + simplification, 20 Qs'},
+  {t:'07:30–08:30',cat:'EPFO',l:'EPFO Week 1: full revision pass across all 5 sub-topics'},
+  {t:'15:00–16:30',cat:'CA',l:'Current affairs + vocab, Day 6 (commute)'},
+  {t:'17:00–19:00',cat:'EPFO',l:'EPFO Week 1: revision continued, weak spots flagged'},
+  {t:'19:30–21:00',cat:'CSE2',l:'CSE Optional 2: Community Psychology — finished'},
+  {t:'21:00–21:45',cat:'CSE1',l:'CSE Optional 1: 1 timed answer, self-graded against a model structure'}
+]};
+HARD['2026-09-12'] = {rhythm:'B', blocks:[
+  {t:'12:30–14:00',cat:'EPFO',l:'EPFO Week 1: topic-wise MCQ test, self-assessed'},
+  {t:'14:00–16:00',cat:'RRB',l:'RRB: full mixed drill, Reasoning + Quant combined, 40 Qs timed'},
+  {t:'16:15–17:15',cat:'CSE2',l:'CSE Optional 2: light revision of both units done this week'},
+  {t:'17:15–17:45',cat:'CA',l:'Current affairs: compile the week into one summary'},
+  {t:'18:30–20:00',cat:'CSE1',l:'CSE Optional 1: review all 6 answers written this week for recurring gaps'},
+  {t:'20:30–22:00',cat:'MISC',l:'Week 1 close-out — anything unchecked tonight is this week’s real signal, not next week’s carry-over'}
+]};
+
+// ---- Generic weekday / weekend slot templates (used from Week 2 onward) ----
+var SLOTS_A = [ // weekday, while employed
+  {t:'06:00–07:00'}, {t:'07:30–08:30'}, {t:'15:00–16:30'}, {t:'17:00–19:00'}, {t:'19:30–21:00'}, {t:'21:00–21:45'}
+];
+var SLOTS_B = [ // Sunday/Saturday, after cooking, from 12:00
+  {t:'12:30–14:00'}, {t:'14:00–16:00'}, {t:'16:15–17:15'}, {t:'17:15–17:45'}, {t:'18:30–20:00'}, {t:'20:30–22:00'}
+];
+var SLOTS_C = [ // full-time, if the November Fork went to India
+  {t:'06:00–08:00'}, {t:'08:45–10:45'}, {t:'11:00–12:00'}, {t:'13:00–15:00'}, {t:'15:15–16:15'}, {t:'16:15–17:15'}, {t:'17:45–18:45'}, {t:'19:30–21:30'}
+];
+
+function dayIndexInPhase(dateStr, phase){ return daysBetween(phase.start, dateStr); }
+function weekOfPhase1(dateStr){ // which EPFO subject-week (2-5) or consolidation (6+), for phase1 dates from 13 Sep on
+  var n = Math.floor(daysBetween('2026-09-06', dateStr)/7)+1; // Week 1 = 6-12 Sep
+  return n;
+}
+
+function forkStatus(){
+  try{ var v = localStorage.getItem('novFork'); if(v) return v; }catch(e){}
+  return today() >= NOV_FORK_DATE ? 'unknown' : 'employed';
+}
+
+function genBlocks(dateStr, phase){
+  var w1 = weekOfPhase1(dateStr);
+  var fork = forkStatus();
+  var movedFullTime = (dateStr >= NOV_FORK_DATE) && (fork === 'moved') && (phase.id==='p2'||phase.id==='p3'||phase.id==='p4'||phase.id==='p5'||phase.id==='p6');
+
+  if(phase.id==='p1'){
+    var isWknd = isSunday(dateStr) || isSaturday(dateStr);
+    var slots = isWknd ? SLOTS_B : SLOTS_A;
+    var idx = dayIndexInPhase(dateStr, phase);
+    var epfoPool = (w1>=2 && w1<=5) ? POOL_EPFO_WEEK[w1] : POOL_EPFO_CONSOLIDATE;
+    var epfoIdx = ((fromDateStr(dateStr).getDay()+6)%7); // Mon=0..Sun=6 rough cycling
+    var b = [];
+    if(isWknd){
+      b.push({t:slots[0].t,cat:'CSEGS',l:'CSE GS/Optional review — ' + pick(POOL_GS, idx)});
+      b.push({t:slots[1].t,cat:'EPFO',l:'EPFO: ' + pick(epfoPool, idx)});
+      b.push({t:slots[2].t,cat:'RRB',l:'RRB: ' + pick(POOL_RRB, idx)});
+      b.push({t:slots[3].t,cat:'CA',l:'Current affairs + English, weekly consolidation'});
+      b.push({t:slots[4].t,cat:'CSE2',l:'CSE Optional 2: ' + pick(POOL_CSE2, Math.floor(idx/3))});
+      b.push({t:slots[5].t,cat:'CSE1',l:'CSE Optional 1: timed answer — ' + pick(POOL_CSE1, idx)});
+    } else {
+      b.push({t:slots[0].t,cat:'RRB',l:'RRB: ' + pick(POOL_RRB, idx)});
+      b.push({t:slots[1].t,cat:'EPFO',l:'EPFO (reading): ' + pick(epfoPool, idx)});
+      b.push({t:slots[2].t,cat:'CSE1',l:'CSE Optional 1 flashcards/vocab (commute)'});
+      b.push({t:slots[3].t,cat:'EPFO',l:'EPFO (notes/deep): ' + pick(epfoPool, idx+1)});
+      b.push({t:slots[4].t,cat:'CSE2',l:'CSE Optional 2: ' + pick(POOL_CSE2, Math.floor(idx/3))});
+      b.push({t:slots[5].t,cat:'CSE1',l:'CSE Optional 1: timed answer — ' + pick(POOL_CSE1, idx)});
+    }
+    return b;
+  }
+
+  if(phase.id==='p2'||phase.id==='p3'){
+    var idx2 = dayIndexInPhase(dateStr, phase);
+    if(movedFullTime){
+      return [
+        {t:SLOTS_C[0].t,cat:'CSEGS',l:'CSE: ' + pick(POOL_GS, idx2)},
+        {t:SLOTS_C[1].t,cat:'EPFO',l:'EPFO: ' + pick(POOL_EPFO_CONSOLIDATE, idx2)},
+        {t:SLOTS_C[2].t,cat:'RRB',l:'RRB: ' + pick(POOL_RRB, idx2)},
+        {t:SLOTS_C[3].t,cat:'CSE2',l:'CSE Optional 2: ' + pick(POOL_CSE2, Math.floor(idx2/2))},
+        {t:SLOTS_C[4].t,cat:'RRB',l:'RRB: ' + pick(POOL_RRB, idx2+3)},
+        {t:SLOTS_C[5].t,cat:'EPFO',l:'EPFO: ' + pick(POOL_EPFO_CONSOLIDATE, idx2+1)},
+        {t:SLOTS_C[6].t,cat:'RRB',l:'RRB: ' + pick(POOL_RRB, idx2+6)},
+        {t:SLOTS_C[7].t,cat:'CSE1',l:'CSE Optional 1: timed answer — ' + pick(POOL_CSE1, idx2)}
+      ];
+    }
+    // employed pace
+    if(phase.id==='p2'){
+      var isWknd2 = isSunday(dateStr) || isSaturday(dateStr);
+      var slotsX = isWknd2 ? SLOTS_B : SLOTS_A;
+      return [
+        {t:slotsX[0].t,cat:'RRB',l:'RRB Prelims mock + analysis'},
+        {t:slotsX[1].t,cat:'EPFO',l:'EPFO maintenance: ' + pick(POOL_EPFO_CONSOLIDATE, idx2)},
+        {t:slotsX[2].t,cat:'CSE2',l:'CSE Optional 2 (commute): ' + pick(POOL_CSE2, Math.floor(idx2/3))},
+        {t:slotsX[3].t,cat:'RRB',l:'RRB: ' + pick(POOL_RRB, idx2)},
+        {t:slotsX[4].t,cat:'CSE1',l:'CSE Optional 1: timed answer — ' + pick(POOL_CSE1, idx2)},
+        {t:slotsX[5].t,cat:'MISC',l:'Mock review / error log'}
+      ];
+    } else {
+      // phase3, employed: EPFO+RRB priority, CSE at zero
+      var slotsY = isSunday(dateStr)||isSaturday(dateStr) ? SLOTS_B : SLOTS_A;
+      return [
+        {t:slotsY[0].t,cat:'RRB',l:'Mains-level Reasoning (data sufficiency, harder puzzles)'},
+        {t:slotsY[1].t,cat:'EPFO',l:'EPFO full-syllabus revision: ' + pick(POOL_EPFO_CONSOLIDATE, idx2)},
+        {t:slotsY[2].t,cat:'RRB',l:'Computer Knowledge / Financial Awareness revision'},
+        {t:slotsY[3].t,cat:'EPFO',l:'EPFO full-syllabus mock + review'},
+        {t:slotsY[4].t,cat:'RRB',l:'English descriptive practice'},
+        {t:slotsY[5].t,cat:'MISC',l:'CSE paused this phase — per the plan’s triage rule, not a slip'}
+      ];
+    }
+  }
+
+  if(phase.id==='p4'){
+    var idx4 = dayIndexInPhase(dateStr, phase);
+    if(movedFullTime){
+      return [
+        {t:SLOTS_C[0].t,cat:'CSEGS',l:'CSE GS: ' + pick(POOL_GS, idx4)},
+        {t:SLOTS_C[1].t,cat:'IBACIO',l:'IB ACIO: ' + pick(POOL_IBACIO, idx4)},
+        {t:SLOTS_C[2].t,cat:'CSE2',l:'CSE Optional 2: ' + pick(POOL_CSE2, Math.floor(idx4/2))},
+        {t:SLOTS_C[3].t,cat:'CSEGS',l:'CSE GS: ' + pick(POOL_GS, idx4+2)},
+        {t:SLOTS_C[4].t,cat:'EPFO',l:'EPFO maintenance (interview-ready)'},
+        {t:SLOTS_C[5].t,cat:'CSE1',l:'CSE Optional 1: timed answer — ' + pick(POOL_CSE1, idx4)},
+        {t:SLOTS_C[6].t,cat:'CA',l:'Current affairs consolidation'},
+        {t:SLOTS_C[7].t,cat:'CSE2',l:'CSE Optional 2 continued'}
+      ];
+    }
+    var slots4 = isSunday(dateStr)||isSaturday(dateStr) ? SLOTS_B : SLOTS_A;
+    return [
+      {t:slots4[0].t,cat:'IBACIO',l:'IB ACIO: ' + pick(POOL_IBACIO, idx4)},
+      {t:slots4[1].t,cat:'EPFO',l:'EPFO maintenance — light revision'},
+      {t:slots4[2].t,cat:'CSE2',l:'CSE Optional 2 (commute): ' + pick(POOL_CSE2, Math.floor(idx4/3))},
+      {t:slots4[3].t,cat:'CSEGS',l:'CSE GS: ' + pick(POOL_GS, idx4)},
+      {t:slots4[4].t,cat:'CSE2',l:'CSE Optional 2: ' + pick(POOL_CSE2, Math.floor(idx4/3)+1)},
+      {t:slots4[5].t,cat:'CA',l:'Current affairs'}
+    ];
+  }
+
+  if(phase.id==='p5'){
+    var idx5 = dayIndexInPhase(dateStr, phase);
+    var finalStretch = daysBetween(dateStr,'2027-05-23') <= 21 && daysBetween(dateStr,'2027-05-23') >= 0;
+    var slots5 = isSunday(dateStr)||isSaturday(dateStr) ? SLOTS_B : SLOTS_A;
+    if(finalStretch){
+      return [
+        {t:slots5[0].t,cat:'CSAT',l:'CSAT: ' + pick(POOL_CSAT, idx5)},
+        {t:slots5[1].t,cat:'CSEGS',l:'CSE GS revision: ' + pick(POOL_GS, idx5)},
+        {t:slots5[2].t,cat:'CSEGS',l:'Full CSE Prelims mock, timed'},
+        {t:slots5[3].t,cat:'CSEGS',l:'Mock review — error log'},
+        {t:slots5[4].t,cat:'CSE2',l:'CSE Optional revision (light, Prelims doesn’t test it)'},
+        {t:slots5[5].t,cat:'MISC',l:'Interview prep, if a call has come'}
+      ];
+    }
+    return [
+      {t:slots5[0].t,cat:'CSAT',l:'CSAT: ' + pick(POOL_CSAT, idx5)},
+      {t:slots5[1].t,cat:'CSEGS',l:'CSE GS: ' + pick(POOL_GS, idx5)},
+      {t:slots5[2].t,cat:'CSE2',l:'CSE Optional 2 (commute): ' + pick(POOL_CSE2, Math.floor(idx5/3))},
+      {t:slots5[3].t,cat:'CSEGS',l:'CSE GS revision: ' + pick(POOL_GS, idx5+2)},
+      {t:slots5[4].t,cat:'MISC',l:'Interview prep, if a call has come'},
+      {t:slots5[5].t,cat:'CSE1',l:'CSE Optional 1: timed answer — ' + pick(POOL_CSE1, idx5)}
+    ];
+  }
+
+  if(phase.id==='p6'){
+    var idx6 = dayIndexInPhase(dateStr, phase);
+    var slots6 = isSunday(dateStr)||isSaturday(dateStr) ? SLOTS_B : SLOTS_A;
+    return [
+      {t:slots6[0].t,cat:'ESSAY',l:'Essay practice, timed'},
+      {t:slots6[1].t,cat:'ETHICS',l:'Ethics (GS-IV): case study practice'},
+      {t:slots6[2].t,cat:'MISC',l:'Current affairs, consolidated into answer-ready points'},
+      {t:slots6[3].t,cat:'GSMAINS',l:pick(POOL_GSMAINS, idx6)},
+      {t:slots6[4].t,cat:'OPTW',l:pick(POOL_OPTWRITE, idx6)},
+      {t:slots6[5].t,cat:'GSMAINS',l:pick(POOL_GSMAINS, idx6+2)}
+    ];
+  }
+  return [];
+}
+
+function getDayPlan(dateStr){
+  var phase = phaseFor(dateStr);
+  if(EXAM_DAYS[dateStr]) return {phase:phase, exam:EXAM_DAYS[dateStr], blocks:[]};
+  if(HARD[dateStr]) return {phase:phase, blocks:HARD[dateStr].blocks, rhythmNote: HARD[dateStr].rhythm};
+  var blocks = genBlocks(dateStr, phase);
+  var rn = (dateStr>=NOV_FORK_DATE && (phase.id==='p2'||phase.id==='p3'||phase.id==='p4'||phase.id==='p5'||phase.id==='p6') && forkStatus()==='moved') ? 'Full-time (Fork → India)' : (isSunday(dateStr)||isSaturday(dateStr) ? 'Weekend' : 'Weekday');
+  return {phase:phase, blocks:blocks, rhythmNote:rn};
+}
+
+// ---- State (persisted to this browser's localStorage — per-device, no cross-device sync) ----
+var STATE = {completions:{}};
+(function(){
+  try{ var local = JSON.parse(localStorage.getItem('trackerState')||'null'); if(local && local.completions) STATE = local; }catch(e){}
+})();
+
+function completionKey(dateStr, idx){ return dateStr+'_'+idx; }
+function isDone(dateStr, idx){ return !!STATE.completions[completionKey(dateStr,idx)]; }
+function setDone(dateStr, idx, val){ STATE.completions[completionKey(dateStr,idx)] = val; }
+
+function saveState(){
+  try{ localStorage.setItem('trackerState', JSON.stringify(STATE)); }catch(e){
+    console.warn('Tracker save failed — localStorage unavailable or full:', e);
+  }
+}
+
+// ---- UI ----
+var weekSel = document.getElementById('weekSel');
+var daySel = document.getElementById('daySel');
+var dayView = document.getElementById('dayView');
+var historyList = document.getElementById('historyList');
+
+function weekLabel(n){
+  var start = addDays(PROGRAM_START, (n-1)*7);
+  var end = addDays(start, 6);
+  return 'Week ' + n + ' · ' + fullDateLabel(start) + ' – ' + fullDateLabel(end);
+}
+function populateWeeks(){
+  weekSel.innerHTML='';
+  for(var n=1;n<=TOTAL_WEEKS;n++){
+    var o = document.createElement('option'); o.value=n; o.textContent=weekLabel(n); weekSel.appendChild(o);
+  }
+}
+function currentWeekNum(){
+  var d = Math.floor(daysBetween(PROGRAM_START, today())/7)+1;
+  return Math.max(1, Math.min(TOTAL_WEEKS, d));
+}
+function populateDays(weekNum){
+  daySel.innerHTML='';
+  var start = addDays(PROGRAM_START, (weekNum-1)*7);
+  for(var i=0;i<7;i++){
+    var ds = addDays(start,i);
+    var o = document.createElement('option'); o.value=ds; o.textContent = weekdayName(ds)+' '+fullDateLabel(ds);
+    daySel.appendChild(o);
+  }
+}
+
+function renderDay(dateStr){
+  var plan = getDayPlan(dateStr);
+  var html = '';
+  var deadline = DEADLINES[dateStr];
+  if(deadline) html += '<div class="deadline-banner">⚠ '+deadline+'</div>';
+
+  html += '<div class="daymeta"><div><div class="dname">'+weekdayName(dateStr)+' '+fullDateLabel(dateStr)+(dateStr===today()?' <span class="mono" style="color:var(--accent);font-size:.7rem;">(today)</span>':'')+'</div>';
+  html += '<div class="dphase">'+plan.phase.label+'</div></div>';
+  html += '<div class="drhythm">'+(plan.rhythmNote||'')+'</div></div>';
+
+  if(plan.exam){
+    html += '<div class="examday"><h3>📌 '+plan.exam.label+'</h3><ul>';
+    plan.exam.tips.forEach(function(t){ html += '<li>'+t+'</li>'; });
+    html += '</ul></div>';
+    dayView.innerHTML = html;
+    return;
+  }
+
+  var doneCount=0;
+  plan.blocks.forEach(function(b,i){
+    var done = isDone(dateStr,i);
+    if(done) doneCount++;
+    html += '<label class="block'+(done?' done':'')+'" data-idx="'+i+'">'+
+      '<input type="checkbox" '+(done?'checked':'')+' data-date="'+dateStr+'" data-idx="'+i+'">'+
+      '<span class="btime mono">'+b.t+'</span>'+
+      '<span class="blabel"><span class="bcat">'+CAT[b.cat]+'</span>'+b.l+'</span>'+
+      '</label>';
+  });
+
+  var total = plan.blocks.length;
+  var pct = total ? Math.round(doneCount/total*100) : 0;
+  var skippedLabels = plan.blocks.filter(function(b,i){return !isDone(dateStr,i);}).map(function(b){
+    var parts = b.l.split(':');
+    return parts.length>1 ? parts.slice(1).join(':').trim() : b.l;
+  });
+  html += '<div class="daysummary">'+
+    '<span class="pct mono">'+pct+'%</span>'+
+    '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;"></div></div>'+
+    '<span class="txt">'+doneCount+' / '+total+' blocks done</span>';
+  if(total && doneCount<total) html += '<div class="skipped">Still open: '+skippedLabels.join(', ')+'</div>';
+  html += '</div>';
+
+  dayView.innerHTML = html;
+
+  dayView.querySelectorAll('.block input').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      var d = cb.getAttribute('data-date'), idx = parseInt(cb.getAttribute('data-idx'),10);
+      setDone(d, idx, cb.checked);
+      cb.closest('.block').classList.toggle('done', cb.checked);
+      saveState();
+      renderDay(d); // refresh summary bar
+      renderHistory();
+    });
+  });
+}
+
+function allTrackedDates(){
+  var set = {};
+  Object.keys(STATE.completions).forEach(function(k){ set[k.split('_')[0]] = true; });
+  return Object.keys(set).sort().reverse();
+}
+function renderHistory(){
+  var dates = allTrackedDates();
+  if(!dates.length){ historyList.innerHTML = 'No days tracked yet — check off your first block above.'; return; }
+  var html = '';
+  dates.slice(0,30).forEach(function(ds){
+    var plan = getDayPlan(ds);
+    if(plan.exam){ return; }
+    var total = plan.blocks.length, done=0;
+    plan.blocks.forEach(function(b,i){ if(isDone(ds,i)) done++; });
+    var pct = total? Math.round(done/total*100):0;
+    html += '<div class="histrow"><span class="mono">'+weekdayName(ds)+' '+fullDateLabel(ds)+'</span>'+
+      '<span class="hbar"><i style="width:'+pct+'%;"></i></span>'+
+      '<span class="mono">'+done+'/'+total+'</span></div>';
+  });
+  historyList.innerHTML = html || 'No days tracked yet — check off your first block above.';
+}
+
+weekSel.addEventListener('change', function(){ populateDays(parseInt(weekSel.value,10)); renderDay(daySel.value); });
+daySel.addEventListener('change', function(){ renderDay(daySel.value); });
+
+var forkSel = document.getElementById('forkSel');
+forkSel.addEventListener('change', function(){
+  try{ localStorage.setItem('novFork', forkSel.value); }catch(e){}
+  renderDay(daySel.value);
+});
+try{ forkSel.value = localStorage.getItem('novFork') || 'unknown'; }catch(e){}
+
+// ---- Init ----
+populateWeeks();
+var restoreWeek = null, restoreDay = null;
+try{ restoreWeek = sessionStorage.getItem('lastWeek'); restoreDay = sessionStorage.getItem('lastDay'); }catch(e){}
+var initWeek = restoreWeek ? parseInt(restoreWeek,10) : currentWeekNum();
+weekSel.value = initWeek;
+populateDays(initWeek);
+var initDay = restoreDay || (today()>=PROGRAM_START && today()<=PROGRAM_END ? today() : daySel.options[0].value);
+if([].slice.call(daySel.options).some(function(o){return o.value===initDay;})) daySel.value = initDay;
+renderDay(daySel.value);
+renderHistory();
+
+// ---- Reference tab: dates, syllabus ----
+var DATES_ROWS = [
+  {d:'2026-09-11',l:'EPFO APFC application closes',est:false},
+  {d:'2026-09-21',l:'RRB PO application closes',est:false},
+  {d:'2026-11-01',l:'November Fork — UK job decision',est:true},
+  {d:'2026-11-21',l:'RRB PO Prelims',est:true},
+  {d:'2026-12-20',l:'EPFO APFC written exam',est:false},
+  {d:'2026-12-27',l:'RRB PO Mains',est:true},
+  {d:'2027-02-02',l:'UPSC CSE 2027 application closes',est:true},
+  {d:'2027-05-23',l:'UPSC CSE Prelims',est:true},
+  {d:'2027-08-20',l:'UPSC CSE Mains',est:true}
+];
+function renderDates(){
+  var t = document.getElementById('datesTable');
+  var html = '<thead><tr><th>Days left</th><th>Milestone</th><th>Date</th></tr></thead><tbody>';
+  DATES_ROWS.forEach(function(r){
+    var diff = daysBetween(today(), r.d);
+    var dstr = diff>0 ? diff+'d' : (diff===0?'today':'passed');
+    html += '<tr><td class="num">'+dstr+'</td><td>'+r.l+(r.est?' <span style="color:var(--muted);font-size:.72rem;">(est.)</span>':'')+'</td><td class="mono">'+fullDateLabel(r.d)+'</td></tr>';
+  });
+  html += '</tbody>';
+  t.innerHTML = html;
+}
+renderDates();
+
+var SYLLABUS = [
+  {name:'IBPS RRB PO', body:'Prelims: Reasoning + Quant, 80 Qs / 45 min. Mains: Reasoning, English/Hindi, Quant, General/Financial/Computer Awareness, 200 Qs / 120 min. Then interview.'},
+  {name:'UPSC EPFO (APFC)', body:'Single paper, 120 Qs / 300 marks / 2 hrs, 1/3 negative marking. English; Indian Culture, Heritage & Freedom Movement; Governance & Constitution; Indian Economy; Labour Codes, Industrial Relations & Social Security; Accountancy, Auditing & Insurance; Computer Applications & General Science; Elementary Maths/Stats/Mental Ability. Then interview (25% weight).'},
+  {name:'IB ACIO Grade II', body:'Tier 1: objective GK/current affairs/reasoning/quant/English + short essay. Tier 2: descriptive English. Then interview.'},
+  {name:'NIACL AO (Generalist, opportunistic)', body:'Prelims + Mains, both mostly Reasoning/English/GA/Quant — no separate domain paper for the Generalist stream, plus a Letter+Essay component in Mains.'},
+  {name:'UPSC CSE — Prelims', body:'GS Paper (general studies, objective) + CSAT (qualifying only). Static GS overlaps heavily with EPFO’s History/Governance/Economy content.'},
+  {name:'UPSC CSE — Mains', body:'Essay, GS I–IV (History/Geography/Society; Polity/Governance/IR; Economy/Environment/Security; Ethics), Optional Paper 1 & 2 (Psychology), two qualifying language papers.'},
+  {name:'CSE Optional — Psychology, Paper 1: Foundations', body:'14 units — methods, research & stats, development, sensation/perception, learning, memory, thinking, motivation/emotion, intelligence, personality, attitudes, language, and modern issues (AI, consciousness). Largely MSc-level content.'},
+  {name:'CSE Optional — Psychology, Paper 2: Applied', body:'14 units, India-specific — measurement, mental health, therapy, work/educational/community/rehabilitation psychology, disadvantaged groups, social integration, IT & media, economic development, environment, gender. The genuine cold-start half.'}
+];
+function renderSyllabus(){
+  var el = document.getElementById('syllabusList'); var html='';
+  SYLLABUS.forEach(function(s){ html += '<div class="syllabus-exam"><h3>'+s.name+'</h3><p>'+s.body+'</p></div>'; });
+  el.innerHTML = html;
+}
+renderSyllabus();
+
+// ---- Tabs ----
+document.querySelectorAll('nav.tabs button').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('nav.tabs button').forEach(function(b){b.classList.remove('active');});
+    btn.classList.add('active');
+    document.getElementById('tab-tracker').hidden = btn.getAttribute('data-tab')!=='tracker';
+    document.getElementById('tab-reference').hidden = btn.getAttribute('data-tab')!=='reference';
+  });
+});
+
+})();
+</script>
+</body>
+</html>
